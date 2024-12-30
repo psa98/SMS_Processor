@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".StartActivity">
+
+    <TextView
+        android:id="@+id/permissionsText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:background="#aaaaaa"
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        android:layout_margin="12dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/permissionsText" >
+
+        <TextView
+            android:layout_margin="12dp"
+            android:background="@color/white"
+            android:textColor="@color/black"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/scrollLog"
+            />
+
+    </ScrollView>
+
+    <Button
+        android:id="@+id/testButton1"
+        android:onClick="authorizeAdmin"
+        android:text="Авторизация админа на устройстве "
+        android:layout_margin="12dp"
+        app:layout_constraintTop_toBottomOf="@id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        app:layout_constraintTop_toBottomOf="@id/testButton1"
+        android:id="@+id/testPhone"
+        android:text="+79991234567"
+        android:background="@android:drawable/editbox_background"
+        android:inputType="phone"
+        android:layout_margin="24dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/testButton2"
+        android:onClick="registerUser"
+        android:text="Зарегистрировать пользователя с телефоном выше"
+        android:layout_margin="12dp"
+        app:layout_constraintTop_toBottomOf="@id/testPhone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+
+    <Button
+        android:id="@+id/testButton3"
+        android:onClick="makeOrder"
+        android:text="Вызвать указанному выше юзеру такси"
+        android:layout_margin="12dp"
+        app:layout_constraintTop_toBottomOf="@id/testButton2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
