@@ -77,16 +77,5 @@ interface Api {
         @Field("u_check_state") uRole: String="2",
      ): Response<DriveResponse>
 
-    @Headers(
-        "Content-Type: application/x-www-form-urlencoded",
-        "Accept: application/json"
-    )
-    @POST("drive/")
-    suspend fun orderTaxi2(
-        @Body order:Order,
-    ): Response<DriveResponse>
-
-
-
 
 }

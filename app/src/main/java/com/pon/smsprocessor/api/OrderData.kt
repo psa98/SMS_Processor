@@ -19,8 +19,8 @@ data class OrderData(
     var b_start_datetime: String,
     var b_max_waiting: Int,
     var b_passengers_count: Int,
-    var b_services: Int=1,
+    var b_services: List<Int>,
     var b_payment_way: String = "1",
 )
 
-fun OrderData.toGson() = Gson().toJson(this)
+fun OrderData.toGson(): String = Gson().toJson(this)

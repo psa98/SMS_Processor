@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.telephony.SmsMessage
+import com.pon.smsprocessor.TaxiRepository.makeOrder
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -87,9 +88,13 @@ class SmsReceiver : BroadcastReceiver() {
 
     private fun processFiltered(smsList: List<SMS>) {
         smsList.forEach { sms ->
-            LogRepository.addToLog("${sms.sender}: ${sms.body} \n От ${currentDateTime()}\n" )
+            LogRepository.addToLog("Получено смс от  ${sms.sender}: ${sms.body} \n От ${currentDateTime()}\n" )
+            makeOrder(sms.sender,sms.body)
         }
     }
+
+
+
 }
 
 // промежуточный класс для сборки длинных смс

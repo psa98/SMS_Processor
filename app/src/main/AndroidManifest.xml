@@ -58,6 +58,7 @@
             android:screenOrientation="sensorPortrait"
             android:name=".StartActivity"
             android:exported="true"
+            android:windowSoftInputMode="adjustPan"
             tools:ignore="DiscouragedApi,LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

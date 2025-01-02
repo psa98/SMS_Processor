@@ -6,6 +6,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.provider.Telephony
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
 
 const val TAG = "SMS Processor"
 class App: Application() {
@@ -17,6 +20,7 @@ class App: Application() {
         )
         val smsReceiver = SmsReceiver()
         this.registerReceiver(smsReceiver, IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION))
+        CoroutineScope(IO).launch { TaxiRepository.authAdmin() }
     }
 
 
