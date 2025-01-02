@@ -2,11 +2,11 @@ package com.pon.smsprocessor.api
 
 
 import retrofit2.Response
-import retrofit2.http.Body
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.Headers
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 const val bot_admin_login = "admin@ibronevik.ru"
 const val bot_admin_password = "p@ssw0rd"
@@ -76,6 +76,24 @@ interface Api {
         @Field("u_a_role") uaRole: String="1",
         @Field("u_check_state") uRole: String="2",
      ): Response<DriveResponse>
+
+
+    @Headers(
+        "Content-Type: application/x-www-form-urlencoded",
+        "Accept: application/json"
+    )
+    @POST("drive/get/{id}")
+    @FormUrlEncoded
+    suspend fun cancelTaxi(
+        @Path("id") id:Int,
+        @Field("token") token: String,
+        @Field("u_hash") uHash: String,
+        @Field("u_a_role") uaRole: String="1",
+        @Field("action") action: String="set_cancel_state",
+        @Field("reason") reason: String="",
+    ): Response<Any>
+
+
 
 
 }

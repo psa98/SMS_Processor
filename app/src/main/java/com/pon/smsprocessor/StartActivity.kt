@@ -48,6 +48,7 @@ class StartActivity : AppCompatActivity() {
         binding.divField.setText(DefaultsRepository.divider)
         binding.timeField.setText(DefaultsRepository.time.toString())
         binding.typeField.setText(DefaultsRepository.orderType.toString())
+        binding.cancelTimeField.setText(DefaultsRepository.cancelTime.toString())
 
         binding.testSMS.setText(stringTemplate())
         binding.divField.addTextChangedListener {
@@ -61,6 +62,10 @@ class StartActivity : AppCompatActivity() {
 
         binding.typeField.addTextChangedListener {
             DefaultsRepository.orderType = it.toString().toIntOrNull() ?: 1
+        }
+
+        binding.cancelTimeField.addTextChangedListener {
+            DefaultsRepository.cancelTime = it.toString().toIntOrNull() ?: 3
         }
 
 

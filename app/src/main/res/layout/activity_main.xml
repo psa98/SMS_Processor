@@ -72,6 +72,25 @@
             android:layout_height="wrap_content" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/cancelTime"
+        app:layout_constraintTop_toBottomOf="@+id/defaultTime"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_width="170dp"
+        android:layout_margin="12dp"
+        android:textSize="14dp"
+        android:layout_height="wrap_content"
+        android:hint="Автоотмена, мин.">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:inputType="number"
+            android:id="@+id/cancelTimeField"
+            android:textSize="14dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+
     <ScrollView
         android:id="@+id/scrollView"
         android:background="#aaaaaa"

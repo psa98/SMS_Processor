@@ -1,6 +1,7 @@
 package com.pon.smsprocessor
 
 import android.content.Context.MODE_PRIVATE
+import android.os.Looper
 import android.util.Log
 import com.google.gson.Gson
 import com.pon.smsprocessor.DefaultsRepository.formattedDate
@@ -8,6 +9,7 @@ import com.pon.smsprocessor.TaxiRepository.userIdMap
 import com.pon.smsprocessor.api.Order
 import com.pon.smsprocessor.api.OrderData
 import com.pon.smsprocessor.api.RetrofitClient.api
+import com.pon.smsprocessor.api.RetrofitClient.gson
 import com.pon.smsprocessor.api.toGson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
@@ -16,6 +18,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.logging.Handler
 
 object TaxiRepository {
 
@@ -30,6 +33,10 @@ object TaxiRepository {
             field = value
             preferences.edit().putString("uHash",field).apply()
         }
+
+
+
+
     var userIdMap: HashMap<String, String> = HashMap()
 
 
@@ -135,7 +142,7 @@ object TaxiRepository {
     }
 
 
-    suspend fun orderTaxi(
+    private suspend fun orderTaxi(
         id: String,
         startAddress: String,
         endAddress: String,
@@ -169,7 +176,33 @@ object TaxiRepository {
             LogRepository.addToLog("Такси заказано успешно, ${result.body()}")
         val resultMessage = " status = ${result.body()?.status} ${result.body()?.message}"
         Log.i(TAG, "orderTaxi: result=$resultMessage")
+        // приходит в double в Аnу значение номера и надо отработать все возможные null
+        val driveId:Int = (Gson().fromJson( result.body()?.data.toString(),HashMap<String,Any>()
+            .javaClass)["b_id"]
+            .toString()
+            .toDoubleOrNull()?: 0)
+            .toInt()
+        if (driveId!=0&&type==5) cancelOrderInTime(driveId)
+        Log.i(TAG, "orderTaxi: id=$driveId")
+
     }
+
+    private fun cancelOrderInTime(driveId: Int) {
+        val looper = Looper.getMainLooper()
+        android.os.Handler(looper).postDelayed({
+            CoroutineScope(IO).launch {
+                val result = try {
+                    api.cancelTaxi(driveId, token, uHash)
+                } catch (e:Exception){
+                    LogRepository.addToLog(e.message.toString())
+                    return@launch
+                }
+                LogRepository.addToLog("Отмена заказа по времени - ответ сервера $result")
+            }
+        },DefaultsRepository.cancelTime*60*1000L)
+
+    }
+
 
     // метод так же обновляет токен и хэш
     suspend fun authAdmin() {
@@ -213,7 +246,6 @@ object TaxiRepository {
             LocalTime.now().toString().take(8)
         }
         return realTime
-
     }
 
     fun makeOrder(phone:String,smsTextString:String) {
@@ -241,11 +273,14 @@ object TaxiRepository {
                     .format(DateTimeFormatter.ISO_LOCAL_TIME)
                     .take(5)
             }.trim().take(5)
-            val orderDateTime = formattedDate( formatTime(orderTime))
+
             val orderType = smsText.getOrElse(4) { DefaultsRepository.orderType.toString() }
                 .trim()
                 .toIntOrNull() ?: DefaultsRepository.orderType
-
+            // если тип заказа 5 то время игнорируется, подставляется текущее
+            val orderDateTime = if (orderType==1)formattedDate( formatTime(orderTime))
+            else formattedDate(LocalTime.now() .plusSeconds(DefaultsRepository.time.toLong())
+                .format(DateTimeFormatter.ISO_LOCAL_TIME).take(8))
 
             //todo - нет в ТЗ параметра для ожидания, по умолчанию стоит "сутки"
             orderTaxi(

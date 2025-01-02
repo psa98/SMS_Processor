@@ -25,6 +25,11 @@ object DefaultsRepository {
             field = value
             preferences.edit().putInt("type", field ).apply()
         }
+    var cancelTime: Int = preferences.getInt("time", 3)
+        set(value) {
+            field = value
+            preferences.edit().putInt("time", field ).apply()
+        }
 
 
     @SuppressLint("SimpleDateFormat")
