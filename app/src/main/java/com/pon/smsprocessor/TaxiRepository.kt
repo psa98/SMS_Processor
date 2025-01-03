@@ -5,6 +5,7 @@ import android.os.Looper
 import android.util.Log
 import com.google.gson.Gson
 import com.pon.smsprocessor.DefaultsRepository.formattedDate
+import com.pon.smsprocessor.DefaultsRepository.okMessage
 import com.pon.smsprocessor.api.Order
 import com.pon.smsprocessor.api.OrderData
 import com.pon.smsprocessor.api.RetrofitClient.api
@@ -24,29 +25,27 @@ object TaxiRepository {
     var token: String = preferences.getString("token", "").toString()
         set(value) {
             field = value
-            preferences.edit().putString( "token",field).apply()
+            preferences.edit().putString("token", field).apply()
         }
     var uHash: String = preferences.getString("uHash", "").toString()
         set(value) {
             field = value
-            preferences.edit().putString("uHash",field).apply()
+            preferences.edit().putString("uHash", field).apply()
         }
-
-
 
 
     var userIdMap: HashMap<String, String> = HashMap()
 
-    private fun retriesEnded(phone:String){
+    private fun retriesEnded(phone: String) {
         if (phone.isEmpty()) return
         LogRepository.addToLog("Повторные попытки исчерпаны, неудача")
-        SMSSender.sendSMS(phone,DefaultsRepository.failMessage)
+        SMSSender.sendSMS(phone, DefaultsRepository.failMessage)
     }
 
     // должно быть вызвано течение 10 секунд после авторизации, обновит поля tокен или u_hash
     // Возвращает false при неуспехе
-    private suspend fun renewTokensForHash(hash: String, retry: Int =0): Boolean {
-        if (retry==DefaultsRepository.retryCount){
+    private suspend fun renewTokensForHash(hash: String, retry: Int = 0): Boolean {
+        if (retry == DefaultsRepository.retryCount) {
             retriesEnded("")
             return false
         }
@@ -56,7 +55,7 @@ object TaxiRepository {
         } catch (e: Exception) {
             LogRepository.addToLog("${e.message.toString()}\n")
             delay(DefaultsRepository.retryTime)
-            renewTokensForHash(hash,retry+1)
+            renewTokensForHash(hash, retry + 1)
             return false
         }
         val token = result.body()?.data?.token
@@ -72,8 +71,8 @@ object TaxiRepository {
     }
 
 
-    private suspend fun registerUserWithPhone(phone: String, name: String,retry: Int=0) {
-        if (retry==DefaultsRepository.retryCount){
+    private suspend fun registerUserWithPhone(phone: String, name: String, retry: Int = 0) {
+        if (retry == DefaultsRepository.retryCount) {
             retriesEnded(phone)
             return
         }
@@ -82,7 +81,7 @@ object TaxiRepository {
         } catch (e: Exception) {
             LogRepository.addToLog("${e.message}\n")
             delay(DefaultsRepository.retryTime)
-            registerUserWithPhone(phone,name,retry+1)
+            registerUserWithPhone(phone, name, retry + 1)
             return
         }
         when {
@@ -91,7 +90,7 @@ object TaxiRepository {
                     "200" -> {
                         val userId = result.body()?.data?.u_id
                         if (userId != null) userIdMap[phone] = userId.toString()
-                        val message ="Пользователь успешно зарегистрирован, userId = $userId "
+                        val message = "Пользователь успешно зарегистрирован, userId = $userId "
                         LogRepository.addToLog(message)
                         Log.d(TAG, message)
                     }
@@ -103,7 +102,7 @@ object TaxiRepository {
                         LogRepository.addToLog(errorMessage)
                         Log.d(TAG, errorMessage)
                         delay(DefaultsRepository.retryTime)
-                        registerUserWithPhone(phone,name,retry+1)
+                        registerUserWithPhone(phone, name, retry + 1)
                     }
                 }
             }
@@ -115,8 +114,8 @@ object TaxiRepository {
     // метод заносит ид пользователя в карту при успехе.
     // Если на сервере юзера нет то он регистрируется
     //
-    suspend fun checkAndRegisterUser(phone: String, name: String,retry: Int=0) {
-        if (retry==DefaultsRepository.retryCount){
+    suspend fun checkAndRegisterUser(phone: String, name: String, retry: Int = 0) {
+        if (retry == DefaultsRepository.retryCount) {
             retriesEnded(phone)
             return
         }
@@ -129,7 +128,7 @@ object TaxiRepository {
         } catch (e: Exception) {
             LogRepository.addToLog("${e.message.toString()}\n")
             delay(DefaultsRepository.retryTime)
-            checkAndRegisterUser(phone,name,retry+1)
+            checkAndRegisterUser(phone, name, retry + 1)
             return
         }
         when {
@@ -158,7 +157,7 @@ object TaxiRepository {
                         LogRepository.addToLog(errorMessage)
                         Log.d(TAG, errorMessage)
                         delay(DefaultsRepository.retryTime)
-                        checkAndRegisterUser(phone,name,retry+1)
+                        checkAndRegisterUser(phone, name, retry + 1)
                     }
                 }
             }
@@ -174,8 +173,8 @@ object TaxiRepository {
         waiting: Int,
         passCount: Int,
         type: Int,
-        phone:String,
-        retry: Int=0
+        phone: String,
+        retry: Int = 0
     ) {
 
         val taxiData = OrderData(
@@ -187,7 +186,7 @@ object TaxiRepository {
             listOf(type),
             "1",
         )
-        if (retry==DefaultsRepository.retryCount){
+        if (retry == DefaultsRepository.retryCount) {
             retriesEnded(phone)
             return
         }
@@ -200,33 +199,55 @@ object TaxiRepository {
             api.orderTaxi(token, uHash, userId, dataUrl)
         } catch (e: Exception) {
             e.printStackTrace()
-            LogRepository.addToLog(e.message.toString())
+            LogRepository.addToLog("${e.message.toString()} попытка ${retry + 1} неудачна")
             delay(DefaultsRepository.retryTime)
-            orderTaxi(userId,startAddress,endAddress,startDateTime,waiting,passCount,type,phone,retry+1)
+            orderTaxi(
+                userId,
+                startAddress,
+                endAddress,
+                startDateTime,
+                waiting,
+                passCount,
+                type,
+                phone,
+                retry + 1
+            )
             return
         }
-        if (result.body()?.code == "200"){
+        if (result.body()?.code == "200") {
             LogRepository.addToLog("Такси заказано успешно, ${result.body()}")
-        val resultMessage = " status = ${result.body()?.status} ${result.body()?.message}"
-        Log.i(TAG, "orderTaxi: result=$resultMessage")
-        // приходит в double в Аnу значение номера и надо отработать все возможные null
-        val driveId:Int = (Gson().fromJson( result.body()?.data.toString(),HashMap<String,Any>()
-            .javaClass)["b_id"]
-            .toString()
-            .toDoubleOrNull()?: 0)
-            .toInt()
-        if (driveId!=0&&type==5) cancelOrderInTime(driveId,userId)
-        Log.i(TAG, "orderTaxi: id=$driveId")}
-        else {
-            LogRepository.addToLog("Такси не заказано, ошибка, ${result.body()}, попытка ${retry+1}")
+            val resultMessage = " status = ${result.body()?.status} ${result.body()?.message}"
+            Log.i(TAG, "orderTaxi: result=$resultMessage")
+            // приходит в double в Аnу значение номера и надо отработать все возможные null
+            // 0 может быть только при ошибке сервера
+            val driveId: Int = (Gson().fromJson(
+                result.body()?.data.toString(), HashMap<String, Any>().javaClass)["b_id"]
+                .toString()
+                .toDoubleOrNull() ?: 0.0)
+                .toInt()
+            if (driveId != 0 && type == 5) cancelOrderInTime(driveId, userId)
+            Log.i(TAG, "orderTaxi: id=$driveId")
+            SMSSender.sendSMS(phone, okMessage)
+        } else {
+            LogRepository.addToLog("Такси не заказано, ошибка, ${result.body()}, попытка ${retry + 1}")
             delay(DefaultsRepository.retryTime)
-            orderTaxi(userId,startAddress,endAddress,startDateTime,waiting,passCount,type,phone,retry+1)
+            orderTaxi(
+                userId,
+                startAddress,
+                endAddress,
+                startDateTime,
+                waiting,
+                passCount,
+                type,
+                phone,
+                retry + 1
+            )
         }
 
     }
 
-    private fun cancelOrderInTime(driveId: Int,id:String, retry:Int=0) {
-        if (retry==DefaultsRepository.retryCount){
+    private fun cancelOrderInTime(driveId: Int, id: String, retry: Int = 0) {
+        if (retry == DefaultsRepository.retryCount) {
             retriesEnded("")
             return
         }
@@ -234,23 +255,23 @@ object TaxiRepository {
         android.os.Handler(looper).postDelayed({
             CoroutineScope(IO).launch {
                 val result = try {
-                    api.cancelTaxi(driveId, token, uHash,id)
-                } catch (e:Exception){
+                    api.cancelTaxi(driveId, token, uHash, id)
+                } catch (e: Exception) {
                     LogRepository.addToLog(e.message.toString())
                     delay(DefaultsRepository.retryTime)
-                    cancelOrderInTime(driveId,id, retry+1)
+                    cancelOrderInTime(driveId, id, retry + 1)
                     return@launch
                 }
                 LogRepository.addToLog("Отмена заказа по времени - ответ сервера ${result.body()}")
             }
-        },DefaultsRepository.cancelTime*60*1000L)
+        }, DefaultsRepository.cancelTime * 60 * 1000L)
 
     }
 
 
     // метод так же обновляет токен и хэш
     suspend fun authAdmin(retry: Int = 0) {
-        if (retry==DefaultsRepository.retryCount) {
+        if (retry == DefaultsRepository.retryCount) {
             retriesEnded("")
             return
         }
@@ -259,14 +280,14 @@ object TaxiRepository {
         } catch (e: Exception) {
             LogRepository.addToLog("Ошибка авторизации админа: ${e.message.toString()}\n")
             delay(DefaultsRepository.retryTime)
-            authAdmin(retry+1)
+            authAdmin(retry + 1)
             return
         }
         when {
             result.isSuccessful -> {
                 if (result.body()?.code == "200") {
                     val hash = result.body()?.auth_hash ?: ""
-                    val renewTokenResult = renewTokensForHash(hash, retry+1)
+                    val renewTokenResult = renewTokensForHash(hash, retry + 1)
                     if (!renewTokenResult) {
                         LogRepository.addToLog("Авторизация не выполнена, не получены токен и хэш")
                         return
@@ -280,6 +301,7 @@ object TaxiRepository {
                     Log.e(TAG, errorMessage)
                 }
             }
+
             else -> {
                 LogRepository.addToLog(result.message())
             }
@@ -298,7 +320,7 @@ object TaxiRepository {
         return realTime
     }
 
-    fun makeOrder(phone:String,smsTextString:String) {
+    fun makeOrder(phone: String, smsTextString: String) {
         CoroutineScope(IO).launch {
             var idString: String? = userIdMap[phone]
             if (idString == null) checkAndRegisterUser(phone, "SMSUser ${LocalDateTime.now()}")
@@ -307,16 +329,18 @@ object TaxiRepository {
                 LogRepository.addToLog("Ошибка регистрации пользователя\n")
                 return@launch
             }
-            val smsText: List<String> =smsTextString.split(DefaultsRepository.divider)
+            val smsText: List<String> = smsTextString.split(DefaultsRepository.divider)
             val startAddress = smsText.getOrElse(0) { "" }.trim()
             if (startAddress.isEmpty()) {
-                LogRepository.addToLog("Не указан обязательный параметр - адрес," +
-                        " заказа такси не будет\n")
+                LogRepository.addToLog(
+                    "Не указан обязательный параметр - адрес," +
+                            " заказа такси не будет\n"
+                )
                 return@launch
             }
             val endAddress = smsText.getOrElse(1) { "" }.trim()
             val passCount: Int = smsText.getOrElse(2) { "1" }.trim().toIntOrNull() ?: 1
-            val orderTime  = smsText.getOrElse(3) {
+            val orderTime = smsText.getOrElse(3) {
                 LocalTime
                     .now()
                     .plusSeconds(DefaultsRepository.time.toLong())
@@ -328,14 +352,16 @@ object TaxiRepository {
                 .trim()
                 .toIntOrNull() ?: DefaultsRepository.orderType
             // если тип заказа 5 то время игнорируется, подставляется текущее
-            val orderDateTime = if (orderType==1)formattedDate( formatTime(orderTime))
-            else formattedDate(LocalTime.now() .plusSeconds(DefaultsRepository.time.toLong())
-                .format(DateTimeFormatter.ISO_LOCAL_TIME).take(8))
+            val orderDateTime = if (orderType == 1) formattedDate(formatTime(orderTime))
+            else formattedDate(
+                LocalTime.now().plusSeconds(DefaultsRepository.time.toLong())
+                    .format(DateTimeFormatter.ISO_LOCAL_TIME).take(8)
+            )
 
             //todo - нет в ТЗ параметра для ожидания, по умолчанию стоит "сутки"
             orderTaxi(
                 idString, startAddress, endAddress, orderDateTime,
-                24 * 60 * 60, passCount, orderType,phone
+                24 * 60 * 60, passCount, orderType, phone
             )
         }
     }

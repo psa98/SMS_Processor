@@ -88,11 +88,14 @@ class SmsReceiver : BroadcastReceiver() {
 
     private fun processFiltered(smsList: List<SMS>) {
         smsList.forEach { sms ->
-            LogRepository.addToLog("Получено смс от  ${sms.sender}: ${sms.body} \n От ${currentDateTime()}\n" )
-            makeOrder(sms.sender,sms.body)
+            if (sms.body.startsWith(DefaultsRepository.okMessage.take(15)) || sms.body.startsWith(
+                    DefaultsRepository.failMessage.take(15)
+                )
+            ) return
+            LogRepository.addToLog("Получено смс от  ${sms.sender}: ${sms.body} \n От ${currentDateTime()}\n")
+            makeOrder(sms.sender, sms.body)
         }
     }
-
 
 
 }
@@ -103,7 +106,6 @@ data class SMSListElement(val smsIndex: Int, val smsMessage: SmsMessage, var str
         string = smsMessage.getString()
     }
 }
-
 
 
 fun currentDateTime(): String {

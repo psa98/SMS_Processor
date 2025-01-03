@@ -31,9 +31,9 @@ class StartActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         val logView = binding.scrollLog
-        LogRepository.logData.observe(this) { log -> logView.text = "Последние SMS: \n \n" + log }
+        LogRepository.logData.observe(this) { log -> logView.text = "Log file: \n \n$log" }
         val readyToSend = checkAndShowPermissions()
-        logView.text = "Последние SMS: \n \n" + LogRepository.logString
+        logView.text = "Log file: \n \n" + LogRepository.logString
         val should = shouldShowRequestPermissionRationale(RECEIVE_SMS)
         binding.permissionsText.text = when {
             readyToSend -> "Разрешение на СМС выдано"
