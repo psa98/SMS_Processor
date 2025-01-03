@@ -1,6 +1,8 @@
 package com.pon.smsprocessor
 
+import android.Manifest
 import android.Manifest.permission.RECEIVE_SMS
+import android.Manifest.permission.SEND_SMS
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
@@ -10,12 +12,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.core.widget.addTextChangedListener
-import com.pon.smsprocessor.TaxiRepository.authAdmin
 import com.pon.smsprocessor.databinding.ActivityMainBinding
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 
 
 const val REQUEST_PERMISSION_SMS = 1004
@@ -67,16 +65,15 @@ class StartActivity : AppCompatActivity() {
         binding.cancelTimeField.addTextChangedListener {
             DefaultsRepository.cancelTime = it.toString().toIntOrNull() ?: 3
         }
-
-
     }
 
 
     private fun checkAndShowPermissions(): Boolean {
         val smsPermission =
-            ContextCompat.checkSelfPermission(this, RECEIVE_SMS) == PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(this, RECEIVE_SMS) == PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this, SEND_SMS) == PERMISSION_GRANTED
         if (!smsPermission) {
-            val permissions = arrayOf(RECEIVE_SMS)
+            val permissions = arrayOf(RECEIVE_SMS, SEND_SMS)
             ActivityCompat.requestPermissions(this, permissions, REQUEST_PERMISSION_SMS)
         }
         return smsPermission

@@ -9,6 +9,13 @@ import kotlin.math.sign
 
 object DefaultsRepository {
 
+    val failMessage: String = "Заказ такси не удался"
+    val okMessage: String = "Заказ такси выполнен"
+
+    val retryCount = 3
+
+    val retryTime = 20*1000L
+
     private val preferences = App.appContext.getSharedPreferences("main", MODE_PRIVATE)
     var divider: String = preferences.getString("divider", "/").toString()
         set(value) {

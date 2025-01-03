@@ -88,6 +88,7 @@ interface Api {
         @Path("id") id:Int,
         @Field("token") token: String,
         @Field("u_hash") uHash: String,
+        @Field("u_a_id") uaId: String,
         @Field("u_a_role") uaRole: String="1",
         @Field("action") action: String="set_cancel_state",
         @Field("reason") reason: String="",
