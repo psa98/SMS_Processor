@@ -4,7 +4,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.pon.smsprocessor.DefaultsRepository
-import com.pon.smsprocessor.LogRepository
+import com.pon.smsprocessor.Logger
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -30,7 +30,7 @@ object RetrofitClient  {
         var tryCount = 0
         while (!response.isSuccessful && tryCount < DefaultsRepository.retryCount) {
             Log.d("intercept", "Request is not successful - $tryCount")
-            LogRepository.addToLog("Ответ сервера ${response.code()}, повтор попытки")
+            Logger.addToLog("Ответ сервера ${response.code()}, повтор попытки")
             tryCount++
             Thread.sleep(DefaultsRepository.retryTime)
             response.close()

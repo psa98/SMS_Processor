@@ -94,6 +94,18 @@ interface Api {
         @Field("reason") reason: String="",
     ): Response<Any>
 
+    @Headers(
+        "Content-Type: application/x-www-form-urlencoded",
+        "Accept: application/json"
+    )
+    @POST("drive/get/{id}")
+    @FormUrlEncoded
+    suspend fun checkDriveState(
+        @Path("id") id:Int,
+        @Field("token") token: String,
+        @Field("u_hash") uHash: String,
+
+    ): Response<OrderReport>
 
 
 

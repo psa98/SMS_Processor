@@ -5,12 +5,13 @@ import android.content.Context.MODE_PRIVATE
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.TimeZone
+import kotlin.math.abs
 import kotlin.math.sign
 
 object DefaultsRepository {
 
-    val failMessage: String = "Заказ такси не удался"
-    val okMessage: String = "Заказ такси выполнен"
+    val failMessage: String = "*Заказ такси не удался*"
+    val okMessage: String = "*Заказ такси выполнен*"
 
     val retryCount = 3
 
@@ -46,7 +47,8 @@ object DefaultsRepository {
             val zoneOffsetHr = TimeZone.getDefault().getOffset(Date().time) / 3600000
             val plusMinus = sign(zoneOffsetHr.toDouble())
             val sign = if (plusMinus > 0) "+" else "-"
-            val textZ = "$sign${if (zoneOffsetHr < 10) "0$zoneOffsetHr" else zoneOffsetHr}:00"
+            val amount = abs(zoneOffsetHr)
+            val textZ = "$sign${if (amount< 10) "0$amount" else amount}:00"
             return dateFormat.format(Date())+ " $withTime" + textZ
 
     }

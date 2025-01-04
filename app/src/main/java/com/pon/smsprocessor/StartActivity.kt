@@ -1,6 +1,5 @@
 package com.pon.smsprocessor
 
-import android.Manifest
 import android.Manifest.permission.RECEIVE_SMS
 import android.Manifest.permission.SEND_SMS
 import android.annotation.SuppressLint
@@ -12,6 +11,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.core.widget.addTextChangedListener
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.pon.smsprocessor.databinding.ActivityMainBinding
 import kotlinx.coroutines.Job
 
@@ -30,10 +30,16 @@ class StartActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-        val logView = binding.scrollLog
-        LogRepository.logData.observe(this) { log -> logView.text = "Log file: \n \n$log" }
+        val logView = binding.logView
+        val adapter = LogAdapter()
+        logView.adapter = adapter
+        logView.layoutManager =LinearLayoutManager(this)
+        adapter.items = Logger.logItemData.value?: emptyList()
+
+
+        Logger.logItemData.observe(this) { log -> adapter.items = log }
+
         val readyToSend = checkAndShowPermissions()
-        logView.text = "Log file: \n \n" + LogRepository.logString
         val should = shouldShowRequestPermissionRationale(RECEIVE_SMS)
         binding.permissionsText.text = when {
             readyToSend -> "Разрешение на СМС выдано"

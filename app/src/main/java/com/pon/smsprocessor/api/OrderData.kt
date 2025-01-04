@@ -8,12 +8,12 @@ data class Order(
     val token: String,
     val uHash: String,
     val uaId: String,
-    val data: OrderData,
+    val data: OrderDataRequest,
     val uaRole: String="1",
     val uRole: String="2",
 )
 
-data class OrderData(
+data class OrderDataRequest(
     var b_start_address: String,
     var b_destination_address: String,
     var b_start_datetime: String,
@@ -23,4 +23,4 @@ data class OrderData(
     var b_payment_way: String = "1",
 )
 
-fun OrderData.toGson(): String = Gson().toJson(this)
+fun OrderDataRequest.toGson(): String = Gson().toJson(this)

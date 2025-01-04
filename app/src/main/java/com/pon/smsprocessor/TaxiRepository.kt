@@ -5,9 +5,9 @@ import android.os.Looper
 import android.util.Log
 import com.google.gson.Gson
 import com.pon.smsprocessor.DefaultsRepository.formattedDate
-import com.pon.smsprocessor.DefaultsRepository.okMessage
 import com.pon.smsprocessor.api.Order
 import com.pon.smsprocessor.api.OrderData
+import com.pon.smsprocessor.api.OrderDataRequest
 import com.pon.smsprocessor.api.RetrofitClient.api
 import com.pon.smsprocessor.api.SMSSender
 import com.pon.smsprocessor.api.toGson
@@ -34,11 +34,15 @@ object TaxiRepository {
         }
 
 
+
+
+
+
     var userIdMap: HashMap<String, String> = HashMap()
 
     private fun retriesEnded(phone: String) {
         if (phone.isEmpty()) return
-        LogRepository.addToLog("Повторные попытки исчерпаны, неудача")
+        Logger.addToLog("Повторные попытки исчерпаны, неудача")
         SMSSender.sendSMS(phone, DefaultsRepository.failMessage)
     }
 
@@ -53,7 +57,7 @@ object TaxiRepository {
         val result = try {
             api.getTokenHash(hash)
         } catch (e: Exception) {
-            LogRepository.addToLog("${e.message.toString()}\n")
+            Logger.addToLog("${e.message.toString()}\n", true)
             delay(DefaultsRepository.retryTime)
             renewTokensForHash(hash, retry + 1)
             return false
@@ -61,7 +65,7 @@ object TaxiRepository {
         val token = result.body()?.data?.token
         val uHash = result.body()?.data?.u_hash
         if (token.isNullOrEmpty() || uHash.isNullOrEmpty()) {
-            LogRepository.addToLog("Токен или u_hash не получены! \n")
+            Logger.addToLog("Токен или u_hash не получены! \n", true)
             return false
         }
         TaxiRepository.uHash = uHash
@@ -79,7 +83,10 @@ object TaxiRepository {
         val result = try {
             api.registerNewUser(token, uHash, name, phone)
         } catch (e: Exception) {
-            LogRepository.addToLog("${e.message}\n")
+            Logger.addToLog(
+                "Ошибка регистрации пользователя ${e.message} попытка ${retry + 1} \n",
+                true
+            )
             delay(DefaultsRepository.retryTime)
             registerUserWithPhone(phone, name, retry + 1)
             return
@@ -91,7 +98,7 @@ object TaxiRepository {
                         val userId = result.body()?.data?.u_id
                         if (userId != null) userIdMap[phone] = userId.toString()
                         val message = "Пользователь успешно зарегистрирован, userId = $userId "
-                        LogRepository.addToLog(message)
+                        Logger.addToLog(message)
                         Log.d(TAG, message)
                     }
 
@@ -99,7 +106,7 @@ object TaxiRepository {
                         val errorMessage =
                             "Пользователь - ошибка регистрации, code = ${result.body()?.code}" +
                                     "   status =${result.body()?.status} ${result.message()}"
-                        LogRepository.addToLog(errorMessage)
+                        Logger.addToLog(errorMessage, true)
                         Log.d(TAG, errorMessage)
                         delay(DefaultsRepository.retryTime)
                         registerUserWithPhone(phone, name, retry + 1)
@@ -120,13 +127,16 @@ object TaxiRepository {
             return
         }
         if (userIdMap.contains(phone)) {
-            LogRepository.addToLog("Юзер с этим телефоном уже зарегистрирован, его ид известен ")
+            Logger.addToLog("Юзер с этим телефоном уже зарегистрирован, его ид известен ")
             return
         }
         val result = try {
             api.checkUser(token, uHash, phone)
         } catch (e: Exception) {
-            LogRepository.addToLog("${e.message.toString()}\n")
+            Logger.addToLog(
+                "Проверка наличия пользователя, ошибка ${e.message.toString()}\n  попытка ${retry + 1}",
+                true
+            )
             delay(DefaultsRepository.retryTime)
             checkAndRegisterUser(phone, name, retry + 1)
             return
@@ -135,18 +145,18 @@ object TaxiRepository {
             result.isSuccessful -> {
                 when (result.body()?.code) {
                     "404" -> {
-                        LogRepository.addToLog("Пользователь не найден, нужна регистрация")
+                        Logger.addToLog("Пользователь не найден, нужна регистрация")
                         registerUserWithPhone(phone, name)
                     }
 
                     "200" -> {
                         val userId = result.body()?.auth_user?.u_id
                         if (userId != null) userIdMap[phone] = userId else {
-                            LogRepository.addToLog(" User id = null, ошибка сервера")
+                            Logger.addToLog(" User id = null, ошибка сервера", true)
                         }
                         val message =
                             "Пользователь найден, userId = $userId регистрация не требуется"
-                        LogRepository.addToLog(message)
+                        Logger.addToLog(message)
                         Log.d(TAG, message)
                     }
 
@@ -154,7 +164,7 @@ object TaxiRepository {
                         val errorMessage =
                             "Пользователь - ошибка регистрации, code = ${result.body()?.code}" +
                                     "   status =${result.body()?.status} ${result.message()}"
-                        LogRepository.addToLog(errorMessage)
+                        Logger.addToLog(errorMessage, true)
                         Log.d(TAG, errorMessage)
                         delay(DefaultsRepository.retryTime)
                         checkAndRegisterUser(phone, name, retry + 1)
@@ -177,7 +187,7 @@ object TaxiRepository {
         retry: Int = 0
     ) {
 
-        val taxiData = OrderData(
+        val taxiData = OrderDataRequest(
             startAddress,
             endAddress,
             startDateTime,
@@ -194,12 +204,12 @@ object TaxiRepository {
         val result = try {
             Log.i(TAG, "orderTaxi: =${Gson().toJson(order)}")
             val dataUrl = taxiData.toGson()
-            LogRepository.addToLog("Заказываю такси, параметры $taxiData \n")
+            Logger.addToLog("Заказываю такси, параметры $taxiData \n")
             Log.i(TAG, "orderTaxi: =$dataUrl")
             api.orderTaxi(token, uHash, userId, dataUrl)
         } catch (e: Exception) {
             e.printStackTrace()
-            LogRepository.addToLog("${e.message.toString()} попытка ${retry + 1} неудачна")
+            Logger.addToLog("Заказ такси, ошибка ${e.message.toString()} попытка ${retry + 1} неудачна")
             delay(DefaultsRepository.retryTime)
             orderTaxi(
                 userId,
@@ -215,21 +225,25 @@ object TaxiRepository {
             return
         }
         if (result.body()?.code == "200") {
-            LogRepository.addToLog("Такси заказано успешно, ${result.body()}")
-            val resultMessage = " status = ${result.body()?.status} ${result.body()?.message}"
-            Log.i(TAG, "orderTaxi: result=$resultMessage")
+            Logger.addToLog("Заказ размещен успешно, ${result.body()}")
+            val message = result.body()?.message
             // приходит в double в Аnу значение номера и надо отработать все возможные null
             // 0 может быть только при ошибке сервера
             val driveId: Int = (Gson().fromJson(
-                result.body()?.data.toString(), HashMap<String, Any>().javaClass)["b_id"]
+                result.body()?.data.toString(), HashMap<String, Any>().javaClass
+            )["b_id"]
                 .toString()
                 .toDoubleOrNull() ?: 0.0)
                 .toInt()
             if (driveId != 0 && type == 5) cancelOrderInTime(driveId, userId)
+            if (type!= 5) PollTaskRepository.enqueueTask(driveId)
             Log.i(TAG, "orderTaxi: id=$driveId")
-            SMSSender.sendSMS(phone, okMessage)
+            if (message !=null) SMSSender.sendSMS(phone,"*${message}")
         } else {
-            LogRepository.addToLog("Такси не заказано, ошибка, ${result.body()}, попытка ${retry + 1}")
+            Logger.addToLog(
+                "Такси не заказано, ошибка, ${result.body()}, попытка ${retry + 1}",
+                true
+            )
             delay(DefaultsRepository.retryTime)
             orderTaxi(
                 userId,
@@ -253,16 +267,17 @@ object TaxiRepository {
         }
         val looper = Looper.getMainLooper()
         android.os.Handler(looper).postDelayed({
+            // todo - тут вероятно надо проверить что статус не изменился
             CoroutineScope(IO).launch {
                 val result = try {
                     api.cancelTaxi(driveId, token, uHash, id)
                 } catch (e: Exception) {
-                    LogRepository.addToLog(e.message.toString())
+                    Logger.addToLog(e.message.toString())
                     delay(DefaultsRepository.retryTime)
                     cancelOrderInTime(driveId, id, retry + 1)
                     return@launch
                 }
-                LogRepository.addToLog("Отмена заказа по времени - ответ сервера ${result.body()}")
+                Logger.addToLog("Отмена заказа по времени - ответ сервера ${result.body()}")
             }
         }, DefaultsRepository.cancelTime * 60 * 1000L)
 
@@ -278,7 +293,7 @@ object TaxiRepository {
         val result = try {
             api.authAsAdmin()
         } catch (e: Exception) {
-            LogRepository.addToLog("Ошибка авторизации админа: ${e.message.toString()}\n")
+            Logger.addToLog("Ошибка авторизации админа: ${e.message.toString()}\n", true)
             delay(DefaultsRepository.retryTime)
             authAdmin(retry + 1)
             return
@@ -289,21 +304,21 @@ object TaxiRepository {
                     val hash = result.body()?.auth_hash ?: ""
                     val renewTokenResult = renewTokensForHash(hash, retry + 1)
                     if (!renewTokenResult) {
-                        LogRepository.addToLog("Авторизация не выполнена, не получены токен и хэш")
+                        Logger.addToLog("Авторизация не выполнена, не получены токен и хэш")
                         return
                     } else {
-                        LogRepository.addToLog("Авторизация - токен и хэш обновлены")
+                        Logger.addToLog("Авторизация - токен и хэш обновлены")
                     }
                 } else {
                     val errorMessage =
                         "Ошибка авторизации code=${result.body()?.code} Message: ${result.body()?.message}\n"
-                    LogRepository.addToLog(errorMessage)
+                    Logger.addToLog(errorMessage)
                     Log.e(TAG, errorMessage)
                 }
             }
 
             else -> {
-                LogRepository.addToLog(result.message())
+                Logger.addToLog(result.message())
             }
         }
     }
@@ -326,13 +341,13 @@ object TaxiRepository {
             if (idString == null) checkAndRegisterUser(phone, "SMSUser ${LocalDateTime.now()}")
             idString = userIdMap[phone]
             if (idString == null) {
-                LogRepository.addToLog("Ошибка регистрации пользователя\n")
+                Logger.addToLog("Ошибка регистрации пользователя!\n")
                 return@launch
             }
             val smsText: List<String> = smsTextString.split(DefaultsRepository.divider)
             val startAddress = smsText.getOrElse(0) { "" }.trim()
             if (startAddress.isEmpty()) {
-                LogRepository.addToLog(
+                Logger.addToLog(
                     "Не указан обязательный параметр - адрес," +
                             " заказа такси не будет\n"
                 )

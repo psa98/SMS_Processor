@@ -89,10 +89,10 @@ class SmsReceiver : BroadcastReceiver() {
     private fun processFiltered(smsList: List<SMS>) {
         smsList.forEach { sms ->
             if (sms.body.startsWith(DefaultsRepository.okMessage.take(15)) || sms.body.startsWith(
-                    DefaultsRepository.failMessage.take(15)
-                )
+                    DefaultsRepository.failMessage.take(15)) || sms.body.startsWith("*")
+
             ) return
-            LogRepository.addToLog("Получено смс от  ${sms.sender}: ${sms.body} \n От ${currentDateTime()}\n")
+            Logger.addToLog("Получено смс от  ${sms.sender}: ${sms.body} \n От ${currentDateTime()}\n")
             makeOrder(sms.sender, sms.body)
         }
     }
