@@ -22,7 +22,7 @@ class SmsReceiver : BroadcastReceiver() {
         val interimList = mutableListOf<SMSListElement>()
         // в пришедшем пакете могут быть разные смс (к примеру у них разный отправитель)
         // или продолжение одного СМС, эти приходят пачкой от одного номера и их мы объединяем
-        // критерий начала нового смс в пачке - сильно разное время прихода, MIR в начале или
+        // критерий начала нового смс в пачке - сильно разное время прихода, или
         // иной отправитель чем у предыдущего.
         smsMessages.forEachIndexed { index, smsMessage ->
             val sender = smsMessage.originatingAddress ?: ""
@@ -34,7 +34,6 @@ class SmsReceiver : BroadcastReceiver() {
                         && kotlin.math.abs(previousSMS.smsMessage.timestampMillis - smsMessage.timestampMillis)
                         < 5000L) -> {
                 }
-
                 else -> {
                     smsIndex++
                 }

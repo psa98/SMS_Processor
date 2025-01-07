@@ -1,51 +1,160 @@
 package com.pon.smsprocessor
 
+import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.content.Intent
 import android.util.Log
+import android.widget.Toast
+import androidx.core.content.FileProvider
 import androidx.lifecycle.MutableLiveData
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.pon.smsprocessor.api.OrderReport
+import com.pon.smsprocessor.room.AppDatabase
+import com.pon.smsprocessor.room.LogDataBaseItem
+import com.pon.smsprocessor.room.LogsDao
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.io.File
 import java.lang.reflect.Type
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatter.ofLocalizedDate
+import java.time.format.DateTimeFormatter.ofLocalizedDateTime
+import java.time.format.DateTimeFormatter.ofLocalizedTime
 import java.time.format.FormatStyle
+import java.time.format.FormatStyle.MEDIUM
+import java.time.format.FormatStyle.SHORT
+
 
 object Logger {
-    private val gson = Gson()
 
-    private val preferences = App.appContext.getSharedPreferences("main",MODE_PRIVATE)
+    private val coroutineScope = CoroutineScope(IO)
+    private var logCount = 0
+    private val limitForShow: Int = 2000
+    private val limitForWarning: Int = 50000
+    private val filesDir = File(App.appContext.filesDir, "logs").apply {
+        mkdirs()
+    }
+    private var file = File(filesDir, "logfile.txt")
+        .apply { writeText("") }
+
+    private val emptyLogItem = LogItem(false, "", "Пустой лог сообщений")
+
+    private val emptyItemLog = mutableListOf<LogItem>().apply {
+        add(emptyLogItem)
+    }
+    private var currentList = emptyItemLog
+
+    val logItemData: MutableLiveData<List<LogItem>> = MutableLiveData(emptyItemLog)
+    val mutex = Mutex()
 
 
-    private var logItemListType: Type = object : TypeToken<List<LogItem>>() {}.type
-    private val emptyLogItem = LogItem(false,"","Пустой лог сообщений")
-    private val emptyItemLog = gson.toJson(listOf(emptyLogItem))
-    private val savedLogList:List<LogItem> = gson.fromJson(preferences.getString("LogItemList", emptyItemLog), logItemListType)
-    private val logItemList = mutableListOf<LogItem>().apply {  addAll(savedLogList)}
-    val logItemData:MutableLiveData<List<LogItem>> = MutableLiveData(logItemList)
-
-
-    fun addToLog (item:String, important: Boolean= false){
-        synchronized(logItemList){
-        logItemList.remove(emptyLogItem)
-        if (important) SoundEffectsPlayer.playSound()
-        val newItem  = LogItem(important,LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)),item)
-        //messageList.add(0,sms)
-        logItemList.add(0,newItem)
-        if (logItemList.size>1000) logItemList.removeLast()
-        Log.e(TAG, "addToLog: start=")
-        val jsonList = gson.toJson(logItemList)
-        Log.e(TAG, "addToLog: = end")
-        preferences.edit().putString("LogItemList",jsonList).apply()
-        logItemData.postValue(logItemList)
+    init {
+        CoroutineScope(IO).launch {
+            val lastItems = async {
+                App.roomDao.getLatest(limitForShow)
+            }
+            val newList = lastItems.await().map { LogItem(it.important, it.time, it.text) }
+            currentList = newList.toMutableList()
+            logItemData.postValue(currentList)
+            logCount = async {
+                App.roomDao.getCount()
+            }.await()
         }
     }
 
+    fun addToLog(item: String, important: Boolean = false) {
+
+        synchronized(currentList) {
+            if (important) SoundEffectsPlayer.playSound()
+            val newItem = LogItem(
+                important,
+                time(),
+                item
+            )
+            logCount++
+            currentList.add(0, newItem)
+            if (logCount > limitForWarning && currentList.size % 50 == 0) {
+                currentList.add(
+                    0, LogItem(
+                        false,
+                        time(),
+                        "Рекомендуем сохранить и очистить логи, текущий размер $logCount зап."
+                    )
+                )
+            }
+
+            logItemData.postValue(currentList)
+
+            coroutineScope.launch {
+                mutex.withLock {
+                    App.roomDao.insertRecord(
+                        LogDataBaseItem(
+                            newItem.time,
+                            newItem.important,
+                            newItem.text, 0
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    @Synchronized
+    fun sendLog(context: Context) {
+        Toast.makeText(context, "Идет подготовка", Toast.LENGTH_SHORT).show()
+        CoroutineScope(IO).launch {
+            Log.e(TAG, "sendLog: start=")
+            val lastItems = async {
+                App.roomDao.getAll()
+            }
+            val allLogs = lastItems.await()
+                .map { LogItem(it.important, it.time, it.text) }
+                .joinToString(separator = "\n",
+                    transform = { item -> item.time + (if (item.important) " ** " else "   ") + item.text })
+            file.writeText(allLogs)
+            Log.e(TAG, "sendLog: end. file ready=")
+            val uri = FileProvider.getUriForFile(context, "com.pon.smsprocessor", file)
+            val shareIntent = Intent()
+            shareIntent.action = Intent.ACTION_SEND
+            shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            shareIntent.type = "text/plain"
+            shareIntent.putExtra(Intent.EXTRA_TEXT, "SMSProcessor  логи")
+            shareIntent.type = "text/html"
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.startActivity(Intent.createChooser(shareIntent, "Отправить логи:"))
+        }
+
+
+        val uri = FileProvider.getUriForFile(context, "com.pon.smsprocessor", file)
+        val shareIntent = Intent()
+        shareIntent.action = Intent.ACTION_SEND
+        shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
+        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        shareIntent.type = "text/plain"
+        shareIntent.putExtra(Intent.EXTRA_TEXT, "SMSProcessor  логи")
+        shareIntent.type = "text/html"
+        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        context.startActivity(Intent.createChooser(shareIntent, "Отправить логи:"))
+    }
+
+    private fun time() = (LocalDate.now().format(ofLocalizedDate(SHORT))
+            + ", " + LocalTime.now().format(ofLocalizedTime(MEDIUM)))
+
+
     data class LogItem(
-        val important:Boolean,
+        val important: Boolean,
         val time: String,
-        val text:String
+        val text: String
     )
 
 }

@@ -20,6 +20,7 @@ data class OrderDataRequest(
     var b_max_waiting: Int,
     var b_passengers_count: Int,
     var b_services: List<Int>,
+    val b_options: Map<String,Boolean> = mapOf(Pair("sms",true)),
     var b_payment_way: String = "1",
 )
 

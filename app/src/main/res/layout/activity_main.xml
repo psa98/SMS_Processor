@@ -7,147 +7,186 @@
     android:layout_height="match_parent"
     tools:context=".StartActivity">
 
+    <Button
+        android:id="@+id/testButton3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:onClick="makeOrder"
+        android:text="Имитировать \nприход смс"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/buttonLog"
+        app:layout_constraintStart_toStartOf="parent" />
+
+
+    <Button
+        android:id="@+id/buttonLog"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_margin="12dp"
+        android:onClick="sendLog"
+        android:text="Отправить логи"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/testButton3"
+        app:layout_constraintTop_toBottomOf="@+id/testSMS"
+        app:layout_constraintVertical_bias="0.5" />
+
+    <EditText
+        android:id="@+id/testSMS"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:background="@android:drawable/editbox_background"
+        android:inputType="textMultiLine"
+        android:lines="2"
+        android:text="Откуда (адрес) %%Куда %% кол-во мест%% время %% Код режима заказа (Голосование, Подача )"
+        android:textSize="14dp"
+        app:layout_constraintBottom_toTopOf="@id/testButton3" />
+
+
     <TextView
         android:id="@+id/permissionsText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="12dp"
         android:layout_margin="12dp"
+        android:textSize="12dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/logView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="24dp"
+        android:background="#eeeeee"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:longClickable="true"
+        android:textIsSelectable="true"
+        app:layout_constraintBottom_toTopOf="@id/stopCodesLayout"
+        app:layout_constraintTop_toBottomOf="@id/cancelTime" />
 
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/dividerSymbol"
-        app:layout_constraintTop_toBottomOf="@+id/permissionsText"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/defaultTime"
         android:layout_width="0dp"
-        android:textSize="14dp"
-        android:layout_margin="12dp"
         android:layout_height="wrap_content"
-        android:hint="Разд. в СМС">
+        android:layout_margin="12dp"
+        android:hint="Разд. в СМС"
+        android:textSize="14dp"
+        app:layout_constraintEnd_toStartOf="@id/defaultTime"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/permissionsText">
+
         <com.google.android.material.textfield.TextInputEditText
-            android:text="/"
             android:id="@+id/divField"
-            android:textSize="14dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:text="/"
+            android:textSize="14dp" />
     </com.google.android.material.textfield.TextInputLayout>
+
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/defaultTime"
-        app:layout_constraintTop_toBottomOf="@+id/permissionsText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:hint="Время, +сек к текущему"
+        android:textSize="14dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/dividerSymbol"
-        android:layout_width="0dp"
-        android:layout_margin="12dp"
-        android:textSize="14dp"
-        android:layout_height="wrap_content"
-        android:hint="Время, +сек к текущему">
+        app:layout_constraintTop_toBottomOf="@+id/permissionsText">
 
         <com.google.android.material.textfield.TextInputEditText
-            android:text="0"
-            android:inputType="number"
             android:id="@+id/timeField"
-            android:textSize="14dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="0"
+            android:textSize="14dp" />
     </com.google.android.material.textfield.TextInputLayout>
 
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/defaultMode"
-        app:layout_constraintTop_toBottomOf="@+id/defaultTime"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/cancelTime"
         android:layout_width="0dp"
-        android:layout_margin="12dp"
-        android:textSize="14dp"
         android:layout_height="wrap_content"
-        android:hint="Тип зак.(1/5)">
+        android:layout_margin="12dp"
+        android:hint="Тип зак.(1/5)"
+        android:textSize="14dp"
+        app:layout_constraintEnd_toStartOf="@id/cancelTime"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/defaultTime">
+
         <com.google.android.material.textfield.TextInputEditText
-            android:text="1"
             android:id="@+id/typeField"
-            android:inputType="number"
-            android:textSize="14dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="1"
+            android:textSize="14dp" />
     </com.google.android.material.textfield.TextInputLayout>
+
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/cancelTime"
-        app:layout_constraintTop_toBottomOf="@+id/defaultTime"
-        app:layout_constraintStart_toEndOf="@id/defaultMode"
-        app:layout_constraintEnd_toEndOf="parent"
         android:layout_width="0dp"
-        android:layout_margin="12dp"
-        android:textSize="14dp"
         android:layout_height="wrap_content"
-        android:hint="Автоотмена, мин.">
+        android:layout_margin="12dp"
+        android:hint="Автоотмена, мин."
+        android:textSize="14dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/defaultMode"
+        app:layout_constraintTop_toBottomOf="@+id/defaultTime">
 
         <com.google.android.material.textfield.TextInputEditText
-            android:inputType="number"
             android:id="@+id/cancelTimeField"
-            android:textSize="14dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:textSize="14dp" />
     </com.google.android.material.textfield.TextInputLayout>
-
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:layout_margin="24dp"
-        android:background="#eeeeee"
-        android:focusableInTouchMode="true"
-        android:focusable="true"
-        app:layout_constraintTop_toBottomOf="@id/cancelTime"
-        app:layout_constraintBottom_toTopOf="@id/phoneInput"
-        android:id="@+id/logView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"/>
 
 
     <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/phoneInput"
-        app:layout_constraintBottom_toTopOf="@+id/testSMS"
-        app:layout_constraintStart_toStartOf="parent"
+        android:id="@+id/stopCodesLayout"
         android:layout_width="match_parent"
-        android:layout_margin="12dp"
-        android:textSize="14dp"
         android:layout_height="wrap_content"
-        android:hint="Номер в формате +7999ХХХХХХХ">
+        android:layout_margin="12dp"
+        android:hint="Стоп коды,список "
+        android:textSize="14dp"
+        app:layout_constraintBottom_toTopOf="@+id/phoneInput"
+        app:layout_constraintStart_toStartOf="parent">
+
         <com.google.android.material.textfield.TextInputEditText
-            android:text="+79991234567"
-            android:id="@+id/testPhone"
-            android:inputType="phone"
-            android:textSize="14dp"
+            android:id="@+id/stopCodes"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:inputType="phone"
+            android:text="3,4"
+            android:textSize="14dp" />
     </com.google.android.material.textfield.TextInputLayout>
 
-
-
-    <EditText
-        app:layout_constraintBottom_toTopOf="@id/testButton3"
-        android:id="@+id/testSMS"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/phoneInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:hint="Номер в формате +7999ХХХХХХХ"
         android:textSize="14dp"
-        android:text="Откуда (адрес) %%Куда %% кол-во мест%% время %% Код режима заказа (Голосование, Подача )"
-        android:background="@android:drawable/editbox_background"
-        android:inputType="textMultiLine"
-        android:layout_margin="12dp"
-        android:lines="2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        app:layout_constraintBottom_toTopOf="@+id/testSMS"
+        app:layout_constraintStart_toStartOf="parent">
 
-
-    <Button
-        android:id="@+id/testButton3"
-        android:onClick="makeOrder"
-        android:text="Имитировать приход смс с номером и текстом выше"
-        android:layout_margin="12dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/testPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="phone"
+            android:text="+79991234567"
+            android:textSize="14dp" />
+    </com.google.android.material.textfield.TextInputLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

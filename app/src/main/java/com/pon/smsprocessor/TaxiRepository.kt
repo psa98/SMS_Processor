@@ -6,7 +6,6 @@ import android.util.Log
 import com.google.gson.Gson
 import com.pon.smsprocessor.DefaultsRepository.formattedDate
 import com.pon.smsprocessor.api.Order
-import com.pon.smsprocessor.api.OrderData
 import com.pon.smsprocessor.api.OrderDataRequest
 import com.pon.smsprocessor.api.RetrofitClient.api
 import com.pon.smsprocessor.api.SMSSender
@@ -34,16 +33,13 @@ object TaxiRepository {
         }
 
 
-
-
-
-
     var userIdMap: HashMap<String, String> = HashMap()
+    val messageMap: HashMap<Int, Pair<String,String>> = HashMap()
 
     private fun retriesEnded(phone: String) {
         if (phone.isEmpty()) return
         Logger.addToLog("Повторные попытки исчерпаны, неудача")
-        SMSSender.sendSMS(phone, DefaultsRepository.failMessage)
+        //SMSSender.sendSMS(phone, DefaultsRepository.failMessage)
     }
 
     // должно быть вызвано течение 10 секунд после авторизации, обновит поля tокен или u_hash
@@ -151,19 +147,23 @@ object TaxiRepository {
 
                     "200" -> {
                         val userId = result.body()?.auth_user?.u_id
-                        if (userId != null) userIdMap[phone] = userId else {
-                            Logger.addToLog(" User id = null, ошибка сервера", true)
+                        if (userId != null) {
+                            userIdMap[phone] = userId
+                            val message =
+                                "Пользователь найден, userId = $userId регистрация не требуется"
+                            Logger.addToLog(message)
+                            Log.d(TAG, message)
+                        } else {
+                            Logger.addToLog(
+                                " Пользователь найден, но User id = null, ошибка сервера",
+                                true
+                            )
                         }
-                        val message =
-                            "Пользователь найден, userId = $userId регистрация не требуется"
-                        Logger.addToLog(message)
-                        Log.d(TAG, message)
                     }
 
                     else -> {
                         val errorMessage =
-                            "Пользователь - ошибка регистрации, code = ${result.body()?.code}" +
-                                    "   status =${result.body()?.status} ${result.message()}"
+                            "Пользователь - ошибка регистрации,${result.body()}"
                         Logger.addToLog(errorMessage, true)
                         Log.d(TAG, errorMessage)
                         delay(DefaultsRepository.retryTime)
@@ -194,7 +194,6 @@ object TaxiRepository {
             waiting,
             passCount,
             listOf(type),
-            "1",
         )
         if (retry == DefaultsRepository.retryCount) {
             retriesEnded(phone)
@@ -209,7 +208,10 @@ object TaxiRepository {
             api.orderTaxi(token, uHash, userId, dataUrl)
         } catch (e: Exception) {
             e.printStackTrace()
-            Logger.addToLog("Заказ такси, ошибка ${e.message.toString()} попытка ${retry + 1} неудачна")
+            Logger.addToLog(
+                "Заказ такси, ошибка ${e.message.toString()} попытка ${retry + 1} неудачна",
+                true
+            )
             delay(DefaultsRepository.retryTime)
             orderTaxi(
                 userId,
@@ -226,19 +228,30 @@ object TaxiRepository {
         }
         if (result.body()?.code == "200") {
             Logger.addToLog("Заказ размещен успешно, ${result.body()}")
-            val message = result.body()?.message
+
             // приходит в double в Аnу значение номера и надо отработать все возможные null
             // 0 может быть только при ошибке сервера
-            val driveId: Int = (Gson().fromJson(
-                result.body()?.data.toString(), HashMap<String, Any>().javaClass
-            )["b_id"]
+            val data: Map<String, Any> = try { result.body()?.data as Map<String, Any>}
+            catch (e:Exception){
+                Logger.addToLog(
+                    "Ошибка в формате данных, ${result.body()?.data} не Map, " +
+                            "\nЗаказ не отслеживается!",
+                    true
+                )
+                 return
+            }
+            val driveId: Int = (data["b_id"]
                 .toString()
                 .toDoubleOrNull() ?: 0.0)
                 .toInt()
             if (driveId != 0 && type == 5) cancelOrderInTime(driveId, userId)
-            if (type!= 5) PollTaskRepository.enqueueTask(driveId)
-            Log.i(TAG, "orderTaxi: id=$driveId")
-            if (message !=null) SMSSender.sendSMS(phone,"*${message}")
+            if (type != 5) PollTaskRepository.enqueueTask(driveId)
+            Log.i(TAG, "orderTaxi: id=$driveId $data")
+            val message = (data["message"] as String?)?:""
+            messageMap [driveId] = Pair(phone,message)
+            if (message.isNotEmpty()) {
+                SMSSender.sendSMS(phone,"*${message}")
+            }
         } else {
             Logger.addToLog(
                 "Такси не заказано, ошибка, ${result.body()}, попытка ${retry + 1}",
@@ -272,12 +285,12 @@ object TaxiRepository {
                 val result = try {
                     api.cancelTaxi(driveId, token, uHash, id)
                 } catch (e: Exception) {
-                    Logger.addToLog(e.message.toString())
+                    Logger.addToLog("Отмена заказа ошибка $driveId ${e.message.toString()}", true)
                     delay(DefaultsRepository.retryTime)
                     cancelOrderInTime(driveId, id, retry + 1)
                     return@launch
                 }
-                Logger.addToLog("Отмена заказа по времени - ответ сервера ${result.body()}")
+                Logger.addToLog("Отмена заказа $driveId по времени - ответ сервера ${result.body()}")
             }
         }, DefaultsRepository.cancelTime * 60 * 1000L)
 

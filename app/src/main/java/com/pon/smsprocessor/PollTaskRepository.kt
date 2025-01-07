@@ -23,7 +23,7 @@ import java.util.Date
 object PollTaskRepository {
 
     private val maxTimePolling =
-        5 * 60 * 1000L // максимальное время работы поллинга, потом задача самоудаляется
+        40 * 60 * 1000L // максимальное время работы поллинга, потом задача самоудаляется
     private val pollingPeriod =
         20 * 1000L // частота  поллинга
 
@@ -40,7 +40,6 @@ object PollTaskRepository {
 
     fun enqueueTask(driveId: Int) {
         currentTasksList.add(PollingTask(driveId))
-
     }
 
     internal class PollingTask(
@@ -57,16 +56,32 @@ object PollTaskRepository {
                     try {
                         val result =
                             api.checkDriveState(driveId, TaxiRepository.token, TaxiRepository.uHash)
+                        Logger.addToLog("Обновление данных для поездки $driveId")
+                        val booking = result.body()?.data?.booking?.values?.firstOrNull()
+                        val newState: Int? =booking?.b_state?.toIntOrNull()
+                        val newMessage:String = result.body()?.data?.message?.values?.firstOrNull()?:""
 
-                        val newState: Int? =
-                            result.body()?.data?.booking?.values?.firstOrNull()?.b_state?.toIntOrNull()
+                        Log.i(TAG, "$newMessage: ")
+                        // пара содержит телефон юзера и прежнее сообщение, возможно пустое
+                        val oldMessagePair: Pair<String, String> = TaxiRepository.messageMap[driveId]!!
+                        if (newMessage!=oldMessagePair.second){
+                            //шлем СМС c новым сообщением и обновляем пару
+                            Logger.addToLog(
+                                "Изменение статуса поездки id=${driveId} - новое сообщение ${newMessage}, " +
+                                        "было ранее ${oldMessagePair.second}"
+                            )
+                            SMSSender.sendSMS(oldMessagePair.first, "*$newMessage")
+                            TaxiRepository.messageMap[driveId]= Pair(oldMessagePair.first,newMessage)
+                        }
+
+
                         if (newState != currentOrderState && newState != null) {
                             Logger.addToLog(
-                                "Изменение статуса поездки id=${driveId}\n было ${status[currentOrderState]}" +
-                                        " стало ${status[newState]}"
+                                "Изменение статуса поездки ${driveId}\n booking_status было $currentOrderState" +
+                                        " стало $newState"
                             )
                             currentOrderState = newState
-                            if (newState==3) break
+                            if (newState in DefaultsRepository.stopCodesList) break
                         }
 
                     } catch (e: Exception) {
@@ -74,6 +89,7 @@ object PollTaskRepository {
 
                     }
                 }
+                Logger.addToLog("Запрос данных о поездке id=${driveId} прекращается")
                 currentTasksList.remove(this@PollingTask)
             }
         }

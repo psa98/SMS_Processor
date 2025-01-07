@@ -2,6 +2,7 @@ package com.pon.smsprocessor
 
 import android.annotation.SuppressLint
 import android.content.Context.MODE_PRIVATE
+import android.util.Log
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.TimeZone
@@ -38,6 +39,15 @@ object DefaultsRepository {
             field = value
             preferences.edit().putInt("time", field ).apply()
         }
+    var stopCodes: String = preferences.getString("codes", "3").toString()
+        set(value) {
+            field = value
+            stopCodesList = stopCodes.split(",").mapNotNull { it.trim().toIntOrNull() }
+            Log.i(TAG, "Stop codes: $stopCodesList ")
+            preferences.edit().putString("codes", field).apply()
+        }
+
+    var stopCodesList = stopCodes.split(",").mapNotNull { it.trim().toIntOrNull() }
 
 
     @SuppressLint("SimpleDateFormat")

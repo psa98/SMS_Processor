@@ -4,6 +4,7 @@ import android.Manifest.permission.RECEIVE_SMS
 import android.Manifest.permission.SEND_SMS
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -49,12 +50,14 @@ class StartActivity : AppCompatActivity() {
         ContextCompat.startForegroundService(
             this, Intent(this, ForegroundService::class.java)
         )
+
+        binding.stopCodes.setText(DefaultsRepository.stopCodes)
         binding.divField.setText(DefaultsRepository.divider)
         binding.timeField.setText(DefaultsRepository.time.toString())
         binding.typeField.setText(DefaultsRepository.orderType.toString())
         binding.cancelTimeField.setText(DefaultsRepository.cancelTime.toString())
-
         binding.testSMS.setText(stringTemplate())
+
         binding.divField.addTextChangedListener {
             DefaultsRepository.divider = it.toString()
             binding.testSMS.setText(stringTemplate())
@@ -70,6 +73,11 @@ class StartActivity : AppCompatActivity() {
 
         binding.cancelTimeField.addTextChangedListener {
             DefaultsRepository.cancelTime = it.toString().toIntOrNull() ?: 3
+        }
+
+
+        binding.stopCodes.addTextChangedListener {
+            DefaultsRepository.stopCodes = it.toString()
         }
     }
 
@@ -89,17 +97,15 @@ class StartActivity : AppCompatActivity() {
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            REQUEST_PERMISSION_SMS -> checkAndShowPermissions()
-            else -> {}
-        }
-        val readyToSend = checkAndShowPermissions()
+        if (requestCode != REQUEST_PERMISSION_SMS) return
+        val readyToSend = grantResults.all { it == PERMISSION_GRANTED }
         val should = shouldShowRequestPermissionRationale(RECEIVE_SMS)
         binding.permissionsText.text = when {
             readyToSend -> "Разрешение на СМС выдано"
             !readyToSend && should -> "Выдайте разрешение на смс"
             else -> "Выдайте разрешение на доступ к смс в настройках"
         }
+        if (!readyToSend) binding.permissionsText.setTextColor(Color.RED)
 
     }
 
@@ -115,6 +121,10 @@ class StartActivity : AppCompatActivity() {
         val sms = binding.testSMS.text.toString()
         TaxiRepository.makeOrder(phone,sms)
 
+    }
+
+    fun sendLog(view: View) {
+        Logger.sendLog (this)
     }
 }
 

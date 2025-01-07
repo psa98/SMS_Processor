@@ -31,26 +31,34 @@ class LogAdapter() :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 
-        holder.text.text = items[position].text
-        holder.time.text = items[position].time
+        holder.text.text = "${items[position].time} \n${items[position].text}"
         if (items[position].important) {
             holder.text.setTextColor(Color.RED)
-            holder.time.setTextColor(Color.RED)
+
 
         } else {
             holder.text.setTextColor(Color.BLACK)
-            holder.time.setTextColor(Color.BLACK)
+
 
         }
 
     }
 
+
+    override fun onViewAttachedToWindow(holder: ViewHolder) {
+        super.onViewAttachedToWindow(holder)
+
+        holder.text.setEnabled(false);
+        holder.text.setEnabled(true);
+    }
+
+
     override fun getItemCount() = items.size
 
     inner class ViewHolder(binding: ItemListContentBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        val text: TextView = binding.logItem
-        val time: TextView = binding.time
+        val text: TextView = binding.text
+
     }
 
 }

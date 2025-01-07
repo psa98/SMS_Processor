@@ -13,13 +13,14 @@ object SMSSender {
 
     fun sendSMS(number: String, message: String) {
         if (number.isEmpty() || message.isEmpty()) return
+        Logger.addToLog("ИМИТИРОВАНА ОТПРАВКА СМС $number\n $message ",important = true)
         if (smsManager==null) {
             Logger.addToLog("Отправка смс не поддерживается")
             return
         }
-        Logger.addToLog("Отправлено sms $number\n $message   ")
+
         try {
-            smsManager?.sendTextMessage(number, null, message, null, null)
+            //smsManager?.sendTextMessage(number, null, message, null, null)
         } catch (exception: SecurityException) {
             Logger.addToLog("Ошибка отправки смс\n")
             exception.printStackTrace()

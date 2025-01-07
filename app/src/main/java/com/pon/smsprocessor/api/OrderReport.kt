@@ -72,6 +72,7 @@ class BMaxWaitingList {
 
 class DataForOrder {
     var booking: HashMap<String, OrderData>? = null
+    var message: HashMap<String, String>? = null
 }
 
 

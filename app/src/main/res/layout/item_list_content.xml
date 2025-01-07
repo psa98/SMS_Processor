@@ -9,9 +9,11 @@
 
 
     <TextView
-        android:focusableInTouchMode="true"
-        android:id="@+id/time"
+        android:id="@+id/text"
         android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:longClickable="true"
+        android:textIsSelectable="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="3dp"
@@ -19,17 +21,7 @@
         android:text="title"
         tools:ignore="HardcodedText" />
 
-    <TextView
-        android:id="@+id/logItem"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="12dp"
-        android:layout_margin="3dp"
-        android:text=" description description description description
-        description \n descriptiondescription"
-        tools:ignore="HardcodedText" />
+
     <com.google.android.material.divider.MaterialDivider
         android:layout_width="match_parent"
         android:layout_height="1dp"/>

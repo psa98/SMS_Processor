@@ -74,7 +74,7 @@ interface Api {
         @Field("u_a_id") uaId: String,
         @Field("data") data: String,
         @Field("u_a_role") uaRole: String="1",
-        @Field("u_check_state") uRole: String="2",
+        @Field("u_check_state") checkState: String="2",
      ): Response<DriveResponse>
 
 
@@ -89,7 +89,7 @@ interface Api {
         @Field("token") token: String,
         @Field("u_hash") uHash: String,
         @Field("u_a_id") uaId: String,
-        @Field("u_a_role") uaRole: String="1",
+        @Field("u_a_role") uaRole: String="4",
         @Field("action") action: String="set_cancel_state",
         @Field("reason") reason: String="",
     ): Response<Any>
