@@ -39,7 +39,7 @@ object DefaultsRepository {
             field = value
             preferences.edit().putInt("time", field ).apply()
         }
-    var stopCodes: String = preferences.getString("codes", "3").toString()
+    var stopCodes: String = preferences.getString("codes", "3,4").toString()
         set(value) {
             field = value
             stopCodesList = stopCodes.split(",").mapNotNull { it.trim().toIntOrNull() }
@@ -50,9 +50,20 @@ object DefaultsRepository {
     var stopCodesList = stopCodes.split(",").mapNotNull { it.trim().toIntOrNull() }
 
 
+    var freqTime: Int = preferences.getInt("freq", 20)
+        set(value) {
+            field = value
+            preferences.edit().putInt("freq", field ).apply()
+        }
+
+    var realSMS: Boolean = preferences.getBoolean("smsReal", false)
+        set(value) {
+            field = value
+            preferences.edit().putBoolean("smsReal", field ).apply()
+        }
+
     @SuppressLint("SimpleDateFormat")
     fun formattedDate(withTime:String /* время в формате 00:00:00 */): String {
-
             val dateFormat = SimpleDateFormat("yyyy-MM-dd")
             val zoneOffsetHr = TimeZone.getDefault().getOffset(Date().time) / 3600000
             val plusMinus = sign(zoneOffsetHr.toDouble())
@@ -60,7 +71,6 @@ object DefaultsRepository {
             val amount = abs(zoneOffsetHr)
             val textZ = "$sign${if (amount< 10) "0$amount" else amount}:00"
             return dateFormat.format(Date())+ " $withTime" + textZ
-
     }
 
 }

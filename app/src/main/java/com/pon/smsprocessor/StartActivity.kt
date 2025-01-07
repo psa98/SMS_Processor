@@ -22,9 +22,8 @@ const val REQUEST_PERMISSION_SMS = 1004
 class StartActivity : AppCompatActivity() {
 
     private val binding: ActivityMainBinding by lazy { ActivityMainBinding.inflate(layoutInflater) }
-    private var job: Job? = null
-    private fun stringTemplate() = ("Откуда (адрес) %%Куда %% кол-во мест%% время %% " +
-            "Код режима заказа (Голосование, Подача )").replace("%%", DefaultsRepository.divider)
+     private fun stringTemplate() = ("Формат сообщения:Откуда (адрес) %%Куда %% кол-во мест%% время %% " +
+            "Код режима заказа (Голосование=5, Подача=1)").replace("%%", DefaultsRepository.divider)
 
 
     @SuppressLint("SetTextI18n")
@@ -51,6 +50,10 @@ class StartActivity : AppCompatActivity() {
             this, Intent(this, ForegroundService::class.java)
         )
 
+        binding.formatHint.text=stringTemplate()
+        binding.checkBox.setChecked(DefaultsRepository.realSMS)
+        binding.divField.setText(DefaultsRepository.divider)
+        binding.freqValue.setText(DefaultsRepository.freqTime.toString())
         binding.stopCodes.setText(DefaultsRepository.stopCodes)
         binding.divField.setText(DefaultsRepository.divider)
         binding.timeField.setText(DefaultsRepository.time.toString())
@@ -60,7 +63,15 @@ class StartActivity : AppCompatActivity() {
 
         binding.divField.addTextChangedListener {
             DefaultsRepository.divider = it.toString()
-            binding.testSMS.setText(stringTemplate())
+            binding.formatHint.text = stringTemplate()
+        }
+
+        binding.checkBox.setOnCheckedChangeListener(){_,checked ->
+            DefaultsRepository.realSMS=checked
+        }
+
+        binding.divField.addTextChangedListener {
+            DefaultsRepository.freqTime = it.toString().toIntOrNull()?:20
         }
 
         binding.timeField.addTextChangedListener {
@@ -74,7 +85,6 @@ class StartActivity : AppCompatActivity() {
         binding.cancelTimeField.addTextChangedListener {
             DefaultsRepository.cancelTime = it.toString().toIntOrNull() ?: 3
         }
-
 
         binding.stopCodes.addTextChangedListener {
             DefaultsRepository.stopCodes = it.toString()
@@ -107,11 +117,6 @@ class StartActivity : AppCompatActivity() {
         }
         if (!readyToSend) binding.permissionsText.setTextColor(Color.RED)
 
-    }
-
-    override fun onStop() {
-        super.onStop()
-        job?.cancel()
     }
 
 

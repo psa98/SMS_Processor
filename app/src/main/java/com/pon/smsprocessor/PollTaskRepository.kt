@@ -1,31 +1,18 @@
 package com.pon.smsprocessor
 
-import android.content.Context.MODE_PRIVATE
-import android.os.Looper
 import android.util.Log
-import com.google.gson.Gson
-import com.pon.smsprocessor.DefaultsRepository.formattedDate
-import com.pon.smsprocessor.DefaultsRepository.okMessage
-import com.pon.smsprocessor.api.Order
-import com.pon.smsprocessor.api.OrderData
 import com.pon.smsprocessor.api.RetrofitClient.api
-import com.pon.smsprocessor.api.SMSSender
-import com.pon.smsprocessor.api.toGson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.util.Date
 
 object PollTaskRepository {
 
     private val maxTimePolling =
         40 * 60 * 1000L // максимальное время работы поллинга, потом задача самоудаляется
-    private val pollingPeriod =
-        20 * 1000L // частота  поллинга
+    private val pollingPeriod =  DefaultsRepository.freqTime * 1000L // частота  поллинга
 
 
     val status = mapOf(
@@ -56,7 +43,6 @@ object PollTaskRepository {
                     try {
                         val result =
                             api.checkDriveState(driveId, TaxiRepository.token, TaxiRepository.uHash)
-                        Logger.addToLog("Обновление данных для поездки $driveId")
                         val booking = result.body()?.data?.booking?.values?.firstOrNull()
                         val newState: Int? =booking?.b_state?.toIntOrNull()
                         val newMessage:String = result.body()?.data?.message?.values?.firstOrNull()?:""

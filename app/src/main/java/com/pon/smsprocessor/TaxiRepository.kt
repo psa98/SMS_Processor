@@ -8,7 +8,6 @@ import com.pon.smsprocessor.DefaultsRepository.formattedDate
 import com.pon.smsprocessor.api.Order
 import com.pon.smsprocessor.api.OrderDataRequest
 import com.pon.smsprocessor.api.RetrofitClient.api
-import com.pon.smsprocessor.api.SMSSender
 import com.pon.smsprocessor.api.toGson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
