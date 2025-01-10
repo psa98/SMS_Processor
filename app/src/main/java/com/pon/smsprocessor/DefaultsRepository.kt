@@ -53,6 +53,8 @@ object DefaultsRepository {
     var freqTime: Int = preferences.getInt("freq", 20)
         set(value) {
             field = value
+            if (field<5) field = 5
+            // слишком короткий период или тем более 0 поломает логику и сервер
             preferences.edit().putInt("freq", field ).apply()
         }
 
