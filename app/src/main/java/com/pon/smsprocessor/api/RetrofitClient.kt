@@ -51,8 +51,6 @@ object RetrofitClient  {
 
 
     init {
-
-
         retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
@@ -62,6 +60,4 @@ object RetrofitClient  {
 
     val api: Api
         get() = retrofit.create(Api::class.java)
-
-
 }

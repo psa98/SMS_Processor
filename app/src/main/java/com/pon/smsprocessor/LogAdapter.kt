@@ -34,20 +34,15 @@ class LogAdapter() :
         holder.text.text = "${items[position].time} \n${items[position].text}"
         if (items[position].important) {
             holder.text.setTextColor(Color.RED)
-
-
         } else {
             holder.text.setTextColor(Color.BLACK)
-
-
         }
 
     }
 
-
+    // хак повзволяющий выделять строки в ресайклере
     override fun onViewAttachedToWindow(holder: ViewHolder) {
         super.onViewAttachedToWindow(holder)
-
         holder.text.setEnabled(false);
         holder.text.setEnabled(true);
     }

@@ -54,7 +54,7 @@ object Logger {
     private var currentList = emptyItemLog
 
     val logItemData: MutableLiveData<List<LogItem>> = MutableLiveData(emptyItemLog)
-    val mutex = Mutex()
+    private val mutex = Mutex()
 
 
     init {
@@ -80,6 +80,7 @@ object Logger {
                 time(),
                 item
             )
+            if (currentList.last()== emptyLogItem) currentList.removeLast()
             logCount++
             currentList.add(0, newItem)
             if (logCount > limitForWarning && currentList.size % 50 == 0) {
@@ -87,13 +88,13 @@ object Logger {
                     0, LogItem(
                         false,
                         time(),
-                        "Рекомендуем сохранить и очистить логи, текущий размер $logCount зап."
+                        "Рекомендуем сохранить и очистить логи, текущий размер $logCount зап." +
+                                "Очистку данных приложения можно выполнить в  меню его свойств, " +
+                                "после этого потребуется заново выдать права на доступ к СМС при перезапуске  "
                     )
                 )
             }
-
             logItemData.postValue(currentList)
-
             coroutineScope.launch {
                 mutex.withLock {
                     App.roomDao.insertRecord(
@@ -121,7 +122,7 @@ object Logger {
                 .joinToString(separator = "\n",
                     transform = { item -> item.time + (if (item.important) " ** " else "   ") + item.text })
             file.writeText(allLogs)
-            Log.e(TAG, "sendLog: end. file ready=")
+            Log.e(TAG, "sendLog: end. log file ready=")
             val uri = FileProvider.getUriForFile(context, "com.pon.smsprocessor", file)
             val shareIntent = Intent()
             shareIntent.action = Intent.ACTION_SEND
@@ -133,8 +134,6 @@ object Logger {
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             context.startActivity(Intent.createChooser(shareIntent, "Отправить логи:"))
         }
-
-
         val uri = FileProvider.getUriForFile(context, "com.pon.smsprocessor", file)
         val shareIntent = Intent()
         shareIntent.action = Intent.ACTION_SEND

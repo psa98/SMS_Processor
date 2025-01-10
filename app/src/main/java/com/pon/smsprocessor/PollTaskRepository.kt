@@ -12,7 +12,7 @@ object PollTaskRepository {
 
     private val maxTimePolling =
         40 * 60 * 1000L // максимальное время работы поллинга, потом задача самоудаляется
-    private val pollingPeriod =  DefaultsRepository.freqTime * 1000L // частота  поллинга
+    private fun pollingPeriod() =  DefaultsRepository.freqTime * 1000L // частота  поллинга
 
 
     val status = mapOf(
@@ -39,7 +39,7 @@ object PollTaskRepository {
             CoroutineScope(IO).launch {
                 var currentOrderState = 1
                 while (Date().time < endTime) {
-                    delay(pollingPeriod)
+                    delay(pollingPeriod())
                     try {
                         val result =
                             api.checkDriveState(driveId, TaxiRepository.token, TaxiRepository.uHash)
@@ -47,7 +47,6 @@ object PollTaskRepository {
                         val newState: Int? =booking?.b_state?.toIntOrNull()
                         val newMessage:String = result.body()?.data?.message?.values?.firstOrNull()?:""
 
-                        Log.i(TAG, "$newMessage: ")
                         // пара содержит телефон юзера и прежнее сообщение, возможно пустое
                         val oldMessagePair: Pair<String, String> = TaxiRepository.messageMap[driveId]!!
                         if (newMessage!=oldMessagePair.second){
