@@ -50,6 +50,10 @@ class StartActivity : AppCompatActivity() {
             this, Intent(this, ForegroundService::class.java)
         )
 
+        if (DefaultsRepository.currentText.isEmpty())
+            binding.testSMS.setText(stringTemplate())
+        else
+            binding.testSMS.setText(DefaultsRepository.currentText)
         binding.formatHint.text=stringTemplate()
         binding.checkBox.setChecked(DefaultsRepository.realSMS)
         binding.divField.setText(DefaultsRepository.divider)
@@ -59,7 +63,6 @@ class StartActivity : AppCompatActivity() {
         binding.timeField.setText(DefaultsRepository.time.toString())
         binding.typeField.setText(DefaultsRepository.orderType.toString())
         binding.cancelTimeField.setText(DefaultsRepository.cancelTime.toString())
-        binding.testSMS.setText(stringTemplate())
 
         binding.divField.addTextChangedListener {
             DefaultsRepository.divider = it.toString()
@@ -130,6 +133,11 @@ class StartActivity : AppCompatActivity() {
 
     fun sendLog(view: View) {
         Logger.sendLog (this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        DefaultsRepository.currentText = binding.testSMS.text.toString()
     }
 }
 

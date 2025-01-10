@@ -62,6 +62,13 @@ object DefaultsRepository {
             preferences.edit().putBoolean("smsReal", field ).apply()
         }
 
+
+    var currentText: String = preferences.getString("currentText", "").toString()
+        set(value) {
+            field = value
+            preferences.edit().putString("currentText", field).apply()
+        }
+
     @SuppressLint("SimpleDateFormat")
     fun formattedDate(withTime:String /* время в формате 00:00:00 */): String {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd")
