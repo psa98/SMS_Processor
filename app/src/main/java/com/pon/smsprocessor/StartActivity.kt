@@ -22,7 +22,7 @@ const val REQUEST_PERMISSION_SMS = 1004
 class StartActivity : AppCompatActivity() {
 
     private val binding: ActivityMainBinding by lazy { ActivityMainBinding.inflate(layoutInflater) }
-     private fun stringTemplate() = ("Формат сообщения:Откуда (адрес) %%Куда %% кол-во мест%% время %% " +
+     private fun stringTemplate() = ("Формат сообщения:Откуда %%Куда %% кол-во мест%% время %% " +
             "Код режима заказа (Голосование=5, Подача=1)").replace("%%", DefaultsRepository.divider)
 
 
